@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.9)
 
-IF (WIN32)
 #path to opencv build directory
-set(OpenCV_DIR D:/opencv/cv31/opencv/build)
+set(OpenCV_DIR /opt/OpenCV)
 set(OpenCV_INCLUDES ${OpenCV_DIR}/include)
-endif(WIN32)
+set(CUDA_INCLUDES /usr/local/cuda-10.2/targets/x86_64-linux/include/)
 
 set(PROJECT example)
 

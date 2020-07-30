@@ -9,6 +9,14 @@
 
 #define RESIZE_CALLS_NUM 1000
 
+
+struct timespec start, finish;
+double elapsed;
+
+
+
+
+
 int main(int argc, char **argv)
 {
 	cv::Mat image;
@@ -32,7 +40,7 @@ int main(int argc, char **argv)
 		//exit(0);
 	}
 
-	const char fname[] = "D:\\projects\\BilinearImageResize\\build\\Release\\1.jpg";
+	const char fname[] = "../trump.jpg";
 	image = cv::imread(fname, 1);
 	//image = cv::imread(argv[1], 1);
 	if (image.empty())
@@ -47,56 +55,65 @@ int main(int argc, char **argv)
 	//gpu block start
 	initGPU(4096, 4096);
 	argb_res_gpu = resizeBilinear_gpu(image.cols, image.rows, newSz.width, newSz.height); //init device
-	cpu_startTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	for (int i = 0; i < RESIZE_CALLS_NUM; i++)
 	{
 		argb_res_gpu = resizeBilinear_gpu(image.cols, image.rows, newSz.width, newSz.height);
 	}
-	cpu_endTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 	cpu_ElapseTime = ((double)(cpu_endTime - cpu_startTime) / (double)CLOCKS_PER_SEC);
-	printf("Time GPU: %f\n", cpu_ElapseTime);
+	
+	elapsed = (finish.tv_sec - start.tv_sec);
+	elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+	printf("Time GPU: %f\n", elapsed);
 	deinitGPU();
 	//gpu block end
 
 	//cpu (no OpenMP) block start
-	cpu_startTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	for (int i = 0; i < RESIZE_CALLS_NUM; i++)
 	{
 		delete[] argb_res_cpu;
 		argb_res_cpu = resizeBilinear_cpu(argb, image.cols, image.rows, newSz.width, newSz.height);
 	}
-	cpu_endTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 	cpu_ElapseTime = ((double)(cpu_endTime - cpu_startTime) / (double)CLOCKS_PER_SEC);
-	printf("Time CPU: %f\n", cpu_ElapseTime);
+	elapsed = (finish.tv_sec - start.tv_sec);
+	elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+	printf("Time CPU: %f\n", elapsed);
 	//cpu (no OpenMP) block end
 
 	//OpenMP block start
-	cpu_startTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &start);
 	for (int i = 0; i < RESIZE_CALLS_NUM; i++)
 	{
 		delete[] argb_res_omp;
 		argb_res_omp = resizeBilinear_omp(argb, image.cols, image.rows, newSz.width, newSz.height);
 	}
-	cpu_endTime = clock();
+	clock_gettime(CLOCK_MONOTONIC, &finish);
 	cpu_ElapseTime = ((double)(cpu_endTime - cpu_startTime) / (double)CLOCKS_PER_SEC);
-	printf("Time CPU (OpenMP): %f\n", cpu_ElapseTime);
+	elapsed = (finish.tv_sec - start.tv_sec);
+	elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+	printf("Time CPU (OpenMP): %f\n", elapsed);
 	//OpenMP block end
 
-	//show result images of each module
-	image_resized_gpu = cv::Mat(newSz, CV_8UC3);
-	image_resized_cpu = cv::Mat(newSz, CV_8UC3);
-	image_resized_omp = cv::Mat(newSz, CV_8UC3);
-	cvtInt322Mat(argb_res_gpu, image_resized_gpu);
-	cvtInt322Mat(argb_res_cpu, image_resized_cpu);
-	cvtInt322Mat(argb_res_omp, image_resized_omp);
-	cv::imshow("Original", image);
-	cv::imshow("Resized_GPU", image_resized_gpu);
-	cv::imshow("Resized_CPU", image_resized_cpu);
-	cv::imshow("Resized_OMP", image_resized_omp);
-	cv::waitKey(0);
+	// //show result images of each module
+	// image_resized_gpu = cv::Mat(newSz, CV_8UC3);
+	// image_resized_cpu = cv::Mat(newSz, CV_8UC3);
+	// image_resized_omp = cv::Mat(newSz, CV_8UC3);
+	// cvtInt322Mat(argb_res_gpu, image_resized_gpu);
+	// cvtInt322Mat(argb_res_cpu, image_resized_cpu);
+	// cvtInt322Mat(argb_res_omp, image_resized_omp);
+	// cv::imshow("Original", image);
+	// cv::imshow("Resized_GPU", image_resized_gpu);
+	// cv::imshow("Resized_CPU", image_resized_cpu);
+	// cv::imshow("Resized_OMP", image_resized_omp);
+	// cv::waitKey(0);
 
 	
 	//free memory
+	// printf("%f\n",(double)(cpu_endTime - cpu_startTime));
+	// printf("%f\n",(double)CLOCKS_PER_SEC);
 	freePinned();
 	delete[] argb_res_cpu, argb_res_omp;
 	delete[] argb;
